@@ -313,7 +313,7 @@ void mainLoopOfSimulation( void ){
 
       //追記
       for(int i=0; i<NumberOfParticles; i++){
-         if((ParticleType[i] == FLUID) && (0.600-PARTICLE_DISTANCE<=Position[i*3+1]) && (Position[i*3]<=1.00-PARTICLE_DISTANCE)){
+         if((ParticleType[i] == FLUID) && (0.600-PARTICLE_DISTANCE<=Position[i*3+1])){
             Velocity[i*3  ] = 1; 
             Velocity[i*3+1] = 0; 
             Position[i*3+1] = 0.600;
