@@ -1,10 +1,3 @@
-/*=====================================================================
-  mps.c   
-  (c) Kazuya SHIBATA, Kohei MUROTANI and Seiichi KOSHIZUKA (2014) 
-
-   Fluid Simulation Program Based on a Particle Method (the MPS method)
-   Last update: May 21, 2014
-=======================================================================*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
