@@ -24,23 +24,26 @@ async function processFile(fileNum, profFolderPath, outputFolderPath) {
       let L3_FnS = 0;
 
       for (let j=2; j<lines.length; j++){
-         const [particleType, x, y, z, pressure, tempreture] = lines[j].split(' ').map(x => parseFloat(x));
+         const particleData = lines[j].split(' ');
+         const particleType = parseInt(particleData[0]);
+         const x = parseFloat(particleData[1]);
+         const y = parseFloat(particleData[2]);
 
          if (x<0.000000-eps || 1.500000+eps<=x) continue;
 
          if (Math.abs(y-0.014000)<eps){
             L1++;
-            if (particleType===0){
+            if (particleType===1){
                L1_FnS++;
             }
          }else if (Math.abs(y-0.013000)<eps){
             L2++;
-            if (particleType===0){
+            if (particleType===1){
                L2_FnS++;
             }
          }else if (Math.abs(y-0.012000)<eps){
             L3++;
-            if (particleType===0){
+            if (particleType===1){
                L3_FnS++;
             }
          }
@@ -56,7 +59,7 @@ async function processFile(fileNum, profFolderPath, outputFolderPath) {
 
 // processFile(fileNum, profFolderPath, outputFolderPath)
 processFile(
-   149,
-   "/Users/quwaguchi/thesis/thesis/code/slider_with_heat/with_friction/(-1,-1)/prof",
-   "/Users/quwaguchi/thesis/thesis/code/slider_with_heat/with_friction/(-1,-1)"
+   1049,
+   "/Users/quwaguchi/thesis/thesis/code/slider_with_heat/with_friction/(-1,-1)/slow/prof",
+   "/Users/quwaguchi/thesis/thesis/code/slider_with_heat/with_friction/(-1,-1)/slow"
 )
