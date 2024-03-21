@@ -4,19 +4,12 @@
 #include <string.h>
 
 #define DIM                  2
-#define PARTICLE_DISTANCE    0.002
+#define PARTICLE_DISTANCE    0.001
 #define DT                   0.001
-#define OUTPUT_INTERVAL      20
+#define OUTPUT_INTERVAL      10
 
-// Parameters
-
-double df_coef = 0.05;
-double sliderSpeed = 1.0;
-double iceTemp = -1.0;
-double sliderTemp = -1.0;
-
-#define ARRAY_SIZE           20000
-#define FINISH_TIME          2.0 
+#define ARRAY_SIZE           10000
+#define FINISH_TIME          1.0 
 #define KINEMATIC_VISCOSITY  (1.0E-6)
 #define FLUID_DENSITY        1000.0 
 #define G_X  0.0      
@@ -38,7 +31,9 @@ double sliderTemp = -1.0;
 #define SOLID_AND_FLUID   1
 #define SOLID 2
 #define AIR    3
-#define SLIDER 5
+#define SLIDER 4
+#define WALL 5
+#define DUMMY_WALL 6
 #define GHOST_OR_DUMMY  -1
 #define SURFACE_PARTICLE 1    
 #define INNER_PARTICLE   0      
@@ -74,6 +69,7 @@ void writeData_inProfFormat( void );
 void writeData_inVtuFormat( void );
 
 void calTemperature(void);
+void moveSlider( void );
 
 static double Acceleration[3*ARRAY_SIZE];
 static int    ParticleType[ARRAY_SIZE];
@@ -116,6 +112,22 @@ int main( int argc, char** argv ) {
   return 0;
 }
 
+// Parameters
+
+#define df_coef  0.05
+#define sliderSpeed  5.0
+#define iceTemp -1.0
+#define sliderTemp -1.0
+
+#define x_ice_left  0.0
+#define x_ice_right  0.3-PARTICLE_DISTANCE
+#define y_ice_bottom  0.0
+#define y_ice_top  0.005-PARTICLE_DISTANCE
+#define x_slider_left   -0.3
+#define x_slider_right   0.0-PARTICLE_DISTANCE
+#define y_slider_bottom   0.005
+#define y_slider_top   0.007-PARTICLE_DISTANCE
+
 
 void initializeParticlePositionAndVelocity_for2dim( void ){
   int iX, iY;
@@ -124,36 +136,80 @@ void initializeParticlePositionAndVelocity_for2dim( void ){
   int i = 0;
   int flagOfParticleGeneration;
 
-  nX = (int)(2.0/PARTICLE_DISTANCE);  
-  nY = (int)(0.02/PARTICLE_DISTANCE);
+  nX = (int)(1.0/PARTICLE_DISTANCE);  
+  nY = (int)(0.1/PARTICLE_DISTANCE);
 
-  for(iX= 0; iX<nX; iX+=2){
-    for(iY= 0;iY<nY;iY++){
-      x = PARTICLE_DISTANCE * (double)(iX) - 0.5;
-      y = PARTICLE_DISTANCE * (double)(iY);
+  for(iX= 0; iX<nX; iX++){
+    for(iY= 0; iY<nY; iY++){
+      x = PARTICLE_DISTANCE * (double)(iX) - 0.3;
+      y = PARTICLE_DISTANCE * (double)(iY) - 0.005;
       z = 0.0;
       flagOfParticleGeneration = OFF;
+
+      /*
+      // dummy wall region
+      if ((x>=x_ice_left-4*PARTICLE_DISTANCE-EPS && x<=x_ice_right+4*PARTICLE_DISTANCE+EPS) && (y>=y_ice_bottom-4*PARTICLE_DISTANCE-EPS && y<=y_ice_top-EPS)){
+        ParticleType[i]=DUMMY_WALL;
+        flagOfParticleGeneration = ON;
+        Temperature[i] = iceTemp;
+      }
+
+      // wall region 
+      if ((x>=x_ice_left-2*PARTICLE_DISTANCE-EPS && x<=x_ice_right+2*PARTICLE_DISTANCE+EPS) && (y>=y_ice_bottom-2*PARTICLE_DISTANCE-EPS && y<=y_ice_top-EPS)){
+        ParticleType[i]=DUMMY_WALL;
+        flagOfParticleGeneration = ON;
+        Temperature[i] = iceTemp;
+      }
       
-      /* solid region */
-      if ((x>=0.0 && x<1.50) && ((y>=0.0 && y<0.014)||(iX%100==0 && y==0.014))){ 
+      // solid region 
+      if ((x>=x_ice_left-EPS && x<=x_ice_right+EPS) && ((y>=y_ice_bottom-EPS && y<y_ice_top-EPS)||(iX%100==0 && fabs(y-y_ice_top)<EPS))){ 
         ParticleType[i]=SOLID;
         flagOfParticleGeneration = ON;
         Temperature[i] = iceTemp;
       }
 
-      /* slider region */
-      if( ((x>=-0.5)&&(x<0.0))&&( (y>=0.015)&&(y<0.020)) ){
+      // slider region 
+      if( (x>=x_slider_left-EPS && x<=x_slider_right+EPS) && (y>=y_slider_bottom-EPS && y<=y_slider_top+EPS) ){
         ParticleType[i] = SLIDER;
         Temperature[i] = sliderTemp;
         flagOfParticleGeneration = ON;
       } 
 
-      /* air region */
-      if((x>=0.0 && x<1.5) && (y>=0.015 && y<0.020)){
+      // air region 
+      if((x>=x_ice_left-EPS && x<=x_ice_right+EPS) && (y>=y_slider_bottom-EPS && y<=y_slider_top+EPS)){
         ParticleType[i] = AIR;
         Temperature[i] = sliderTemp;
         flagOfParticleGeneration = ON;
       } 
+      */
+
+      // dummy wall region
+      if ((x>=-0.004 && x<=0.304) && (y>=-0.004 && y<=0.004)){
+        ParticleType[i]=DUMMY_WALL;
+        flagOfParticleGeneration = ON;
+        Temperature[i] = iceTemp;
+      }
+
+      // wall region 
+      if ((x>=-0.002 && x<=0.302) && (y>=-0.002 && y<=0.004)){
+        ParticleType[i]=WALL;
+        flagOfParticleGeneration = ON;
+        Temperature[i] = iceTemp;
+      }
+      
+      // solid region 
+      if ((x>=0.0 && x<=0.3) && ((y>=0.0 && y<0.004)||(iX%50==0 && fabs(y-0.004)<EPS))){ 
+        ParticleType[i]=SOLID;
+        flagOfParticleGeneration = ON;
+        Temperature[i] = iceTemp;
+      }
+
+      // slider region 
+      if( (x>=-0.3 && x<0.0) && (y>=0.005 && y<=0.007) ){
+        ParticleType[i] = SLIDER;
+        Temperature[i] = sliderTemp;
+        flagOfParticleGeneration = ON;
+      }   
 
       if( flagOfParticleGeneration == ON){
         Position[i*3]=x; Position[i*3+1]=y; Position[i*3+2]=z;
@@ -197,12 +253,12 @@ void calNZeroAndLambda( void ){
   N0_forGradient      = 0.0;
   N0_forLaplacian     = 0.0;
   Lambda              = 0.0;
-  xi = 0.0;  yi = 0.0;  zi = 0.0;
+  xi = -0.004;  yi = -0.004;  zi = 0.0;
 
-  for(iX= -4;iX<5;iX+2){
-    for(iY= -4;iY<5;iY++){  
+  for(iX= -4; iX<5; iX++){
+    for(iY= -4; iY<5; iY++){  
       for(iZ= iZ_start;iZ<iZ_end;iZ++){
-        if( ((iX==0)&&(iY==0)) && (iZ==0) )continue;
+        if((iX==-4 && iY==-4) && (iZ==0)) continue;
         xj = PARTICLE_DISTANCE * (double)(iX);
         yj = PARTICLE_DISTANCE * (double)(iY);
         zj = PARTICLE_DISTANCE * (double)(iZ);
@@ -230,8 +286,8 @@ double weight( double distance, double re ){
   return weightIJ;
 }
 
-double sliderLeft = -0.5;
-double sliderRight = 0.0;
+double sliderLeft = x_slider_left;
+double sliderRight = x_slider_right;
 
 void mainLoopOfSimulation( void ){
   int iTimeStep = 0;
@@ -240,6 +296,7 @@ void mainLoopOfSimulation( void ){
   writeData_inProfFormat();
 
   while(1){
+    moveSlider();
     calTemperature();
     calGravity();
     calViscosity();
@@ -334,22 +391,17 @@ void moveParticle( void ){
       Velocity[i*3+1] += Acceleration[i*3+1]*DT; 
       Velocity[i*3+2] += Acceleration[i*3+2]*DT;
 
-      Position[i*3  ] = stayInBoundary(Position[i*3] + Velocity[i*3]*DT, 0.0, 1.5-EPS);
-      Position[i*3+1] = stayInBoundary(Position[i*3+1] + Velocity[i*3+1]*DT, 0.0, 0.015-EPS);
-      Position[i*3+2] += Velocity[i*3+2]*DT;
-    }else if(ParticleType[i] == SLIDER){
-      Velocity[i*3] = sliderSpeed;
       Position[i*3] += Velocity[i*3]*DT;
+      Position[i*3+1] += Velocity[i*3+1]*DT;
+      Position[i*3  ] = stayInBoundary(Position[i*3], 0.0, 0.3);
+      Position[i*3+1] = stayInBoundary(Position[i*3+1], 0.0, 0.005);
+      Position[i*3+2] += Velocity[i*3+2]*DT;
     }
    
     Acceleration[i*3  ]=0.0;
     Acceleration[i*3+1]=0.0;
     Acceleration[i*3+2]=0.0;
-  }
-
-  double travelDistance = sliderSpeed*DT;
-  sliderLeft += travelDistance;
-  sliderRight += travelDistance;  
+  } 
 }
 
 
@@ -406,8 +458,10 @@ void collision( void ){
 
   for(i=0;i<NumberOfParticles;i++){
     if(ParticleType[i] == FLUID){
-      Position[i*3  ] = stayInBoundary(Position[i*3] + Velocity[i*3]*DT, 0.0, 1.5-EPS);
-      Position[i*3+1] = stayInBoundary(Position[i*3+1] + Velocity[i*3+1]*DT, 0.0, 0.015-EPS);
+      Position[i*3] += Velocity[i*3]*DT;
+      Position[i*3+1] += Velocity[i*3+1]*DT;
+      // Position[i*3  ] = stayInBoundary(Position[i*3], 0.0, 0.3);
+      // Position[i*3+1] = stayInBoundary(Position[i*3+1], 0.0, 0.005);
       Position[i*3+2] += Velocity[i*3+2]*DT;
 
       Velocity[i*3  ] = VelocityAfterCollision[i*3  ]; 
@@ -718,8 +772,8 @@ void moveParticleUsingPressureGradient( void ){
       Position[i*3+1] +=Acceleration[i*3+1]*DT*DT;
       Position[i*3+2] +=Acceleration[i*3+2]*DT*DT;
 
-      Position[i*3  ] = stayInBoundary(Position[i*3], 0.0, 1.5-EPS);
-      Position[i*3+1] = stayInBoundary(Position[i*3+1], 0.0, 0.015-EPS);
+      Position[i*3  ] = stayInBoundary(Position[i*3], 0.0, 0.3);
+      Position[i*3+1] = stayInBoundary(Position[i*3+1], 0.0, 0.005);
     }
     Acceleration[i*3  ]=0.0;
     Acceleration[i*3+1]=0.0;
@@ -802,7 +856,7 @@ void calTemperature( void ){
   double rho, lambda, c;
 
   for (i=0; i<NumberOfParticles; i++){
-    if (ParticleType[i]==SLIDER || Position[i*3+1]==0.019){
+    if (ParticleType[i]==SLIDER){
       Temperature[i] = sliderTemp;
       continue;
     }
@@ -813,8 +867,8 @@ void calTemperature( void ){
 
     double UpdatedTemp = Temperature[i];
 
-    if ((Position[i*3]<=sliderRight) && (Position[i*3]>=sliderLeft) && (Position[i*3+1]>0.015-2*PARTICLE_DISTANCE)){
-      UpdatedTemp += df_coef*0.5*9.8*sliderSpeed*DT/(2*rho*c*pow(PARTICLE_DISTANCE, 3)); 
+    if ((Position[i*3]<=sliderRight) && (Position[i*3]>=sliderLeft) && (Position[i*3+1]>0.005-2*PARTICLE_DISTANCE) && (ParticleType[i]!=WALL) && (ParticleType[i]!=DUMMY_WALL)){
+      UpdatedTemp += df_coef*0.5*9.8*2.0*sliderSpeed*DT/(2*rho*c*pow(PARTICLE_DISTANCE, 3)); 
     }  
 
     for (j=0; j<NumberOfParticles; j++){
@@ -832,7 +886,7 @@ void calTemperature( void ){
 
     Temperature[i] = UpdatedTemp;
 
-    if (ParticleType[i]==AIR){
+    if (ParticleType[i]==AIR || ParticleType[i]==DUMMY_WALL || ParticleType[i]==WALL){
       continue;
     }
   
@@ -847,13 +901,26 @@ void calTemperature( void ){
 }
 
 
+void moveSlider(void){
+	double travelDistance = sliderSpeed*DT;
+
+  for (int i=0; i<NumberOfParticles; i++){
+		if (ParticleType[i] == SLIDER){
+      Position[i*3] += travelDistance;
+    }
+  }
+
+  sliderLeft += travelDistance;
+  sliderRight += travelDistance;  
+}
+
 
 void writeData_inProfFormat( void ){
   int i;
   FILE *fp;
   char fileName[256];
 
-  sprintf(fileName, "output_%04d.prof",FileNumber);
+  sprintf(fileName, "prof/output_%04d.prof",FileNumber);
   fp = fopen(fileName, "w");
   fprintf(fp,"%lf\n",Time);
   fprintf(fp,"%d\n",NumberOfParticles);
@@ -873,7 +940,7 @@ void writeData_inVtuFormat( void ){
   FILE *fp;
   char fileName[1024];
 
-  sprintf(fileName, "particle_%04d.vtu", FileNumber);
+  sprintf(fileName, "vtu/particle_%04d.vtu", FileNumber);
   fp=fopen(fileName,"w");
   fprintf(fp,"<?xml version='1.0' encoding='UTF-8'?>\n");
   fprintf(fp,"<VTKFile xmlns='VTK' byte_order='LittleEndian' version='0.1' type='UnstructuredGrid'>\n");

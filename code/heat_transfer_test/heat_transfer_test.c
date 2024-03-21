@@ -218,9 +218,9 @@ void mainLoopOfSimulation( void ){
 	FINISH_TIME = 1500.0;
   int iTimeStep = 0;
 
-  // writeData_inVtuFormat();
+  writeData_inVtuFormat();
   // writeData_inProfFormat();
-  writeData_inCsvFormat();
+  // writeData_inCsvFormat();
 
   while(1){
     // calPressure();
@@ -231,9 +231,9 @@ void mainLoopOfSimulation( void ){
     Time += DT;
     if( (iTimeStep % OUTPUT_INTERVAL) == 0 ){
       printf("TimeStepNumber: %4d   Time: %lf(s)   NumberOfParticles: %d\n", iTimeStep, Time, NumberOfParticles);
-      // writeData_inVtuFormat();
+      writeData_inVtuFormat();
       // writeData_inProfFormat();
-      writeData_inCsvFormat();
+      // writeData_inCsvFormat();
       FileNumber++;
     }
 
@@ -336,7 +336,8 @@ void calTemperature( void ){
       distance = sqrt(distance2);
       w =  weight(distance, Re_forLaplacian);    
 
-      UpdatedTemp += lambda/(rho*c)*dgd*(Temperature[j]-Temperature[i])*w*DT;
+      //補正係数2.7を追加した
+      UpdatedTemp += 2.7*lambda/(rho*c)*dgd*(Temperature[j]-Temperature[i])*w*DT;
     }
 
     Temperature[i] = UpdatedTemp;
@@ -379,9 +380,8 @@ void writeData_inVtuFormat( void ){
   double absoluteValueOfVelocity;
   FILE *fp;
   char fileName[1024];
-  char dirName[] = "vtu";
 
-  sprintf(fileName, "%s/output_%04d.vtu", dirName, FileNumber);
+  sprintf(fileName, "vtu/output_%04d.vtu", FileNumber);
   fp=fopen(fileName,"w");
   fprintf(fp,"<?xml version='1.0' encoding='UTF-8'?>\n");
   fprintf(fp,"<VTKFile xmlns='VTK' byte_order='LittleEndian' version='0.1' type='UnstructuredGrid'>\n");
